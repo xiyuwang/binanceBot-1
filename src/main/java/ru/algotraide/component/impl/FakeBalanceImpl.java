@@ -3,13 +3,15 @@ package ru.algotraide.component.impl;
 import com.binance.api.client.domain.market.TickerPrice;
 import ru.algotraide.component.FakeBalance;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 public class FakeBalanceImpl implements FakeBalance {
 
-    private Map<String, Double> accountFakeBalance;
-    private Map<String, Double> currencyRate;
-    private Double step = 0.00000001;
+    private Map<String, BigDecimal> accountFakeBalance;
+    private Map<String, BigDecimal> currencyRate;
+    private int scale = 8;
 
     public FakeBalanceImpl(){
         initFakeBalance();
@@ -17,51 +19,53 @@ public class FakeBalanceImpl implements FakeBalance {
     }
 
     @Override
-    public Double getBalanceBySymbol(String symbol) {
+    public BigDecimal getBalanceBySymbol(String symbol) {
         return accountFakeBalance.get(symbol);
     }
 
     @Override
-    public void setBalanceBySymbol(String symbol, Double value) {
-        accountFakeBalance.put(symbol, Math.floor(value / step) * step);
+    public void setBalanceBySymbol(String symbol, BigDecimal value) {
+        BigDecimal normValue = value.setScale(scale, RoundingMode.DOWN);
+        accountFakeBalance.put(symbol, normValue);
     }
 
     @Override
-    public void addBalanceBySymbol(String symbol, Double value) {
-        Double newValue = accountFakeBalance.get(symbol) + Math.floor(value / step) * step;
-        setBalanceBySymbol(symbol, newValue);
+    public void addBalanceBySymbol(String symbol, BigDecimal value) {
+        BigDecimal normValue = accountFakeBalance.get(symbol).add(value).setScale(scale, RoundingMode.DOWN);
+        setBalanceBySymbol(symbol, normValue);
     }
 
     @Override
-    public void reduceBalanceBySymbol(String symbol, Double value) {
-        Double newValue = (Math.floor((accountFakeBalance.get(symbol) - value) / step) * step);
-        if (newValue >= 0.0){
-            setBalanceBySymbol(symbol, newValue);
+    public void reduceBalanceBySymbol(String symbol, BigDecimal value) {
+        BigDecimal normValue = accountFakeBalance.get(symbol).subtract(value).setScale(scale, RoundingMode.DOWN);
+        if (normValue.compareTo(BigDecimal.ZERO) >= 0.0){
+            setBalanceBySymbol(symbol, normValue);
         } else {
-            setBalanceBySymbol(symbol, newValue);
+            setBalanceBySymbol(symbol, normValue);
             System.err.println("Баланс по " + symbol + " отрицательный!");
         }
     }
 
     @Override
-    public Double getAllBalanceInDollars(List<TickerPrice> prices) {
-        Double balanceInDollars;
+    public BigDecimal getAllBalanceInDollars(List<TickerPrice> prices) {
+        BigDecimal balanceInDollars;
         prices.forEach(p -> {
             if (currencyRate.containsKey(p.getSymbol())){
-                currencyRate.replace(p.getSymbol(), Double.valueOf(p.getPrice()));
+                currencyRate.replace(p.getSymbol(), new BigDecimal(p.getPrice()));
             }
         });
-        Double ADAinDollar = accountFakeBalance.get("ADA") * currencyRate.get("ADAUSDT");
-        Double BNBinDollar = accountFakeBalance.get("BNB") * currencyRate.get("BNBUSDT");
-        Double BCCinDollar = accountFakeBalance.get("BCC") * currencyRate.get("BCCUSDT");
-        Double BTCinDollar = accountFakeBalance.get("BTC") * currencyRate.get("BTCUSDT");
-        Double ETHinDollar = accountFakeBalance.get("ETH") * currencyRate.get("ETHUSDT");
-        Double LTCinDollar = accountFakeBalance.get("LTC") * currencyRate.get("LTCUSDT");
-        Double NEOinDollar = accountFakeBalance.get("NEO") * currencyRate.get("NEOUSDT");
-        Double QTUMinDollar = accountFakeBalance.get("QTUM") * currencyRate.get("QTUMUSDT");
-        balanceInDollars = ADAinDollar + BNBinDollar + BCCinDollar + BTCinDollar + ETHinDollar +
-                LTCinDollar + NEOinDollar + QTUMinDollar + accountFakeBalance.get("USDT");
-        return Math.floor(balanceInDollars / step) * step;
+        BigDecimal ADAinDollar = accountFakeBalance.get("ADA").multiply(currencyRate.get("ADAUSDT"));
+        BigDecimal BNBinDollar = accountFakeBalance.get("BNB").multiply(currencyRate.get("BNBUSDT"));
+        BigDecimal BCCinDollar = accountFakeBalance.get("BCC").multiply(currencyRate.get("BCCUSDT"));
+        BigDecimal BTCinDollar = accountFakeBalance.get("BTC").multiply(currencyRate.get("BTCUSDT"));
+        BigDecimal ETHinDollar = accountFakeBalance.get("ETH").multiply(currencyRate.get("ETHUSDT"));
+        BigDecimal LTCinDollar = accountFakeBalance.get("LTC").multiply(currencyRate.get("LTCUSDT"));
+        BigDecimal NEOinDollar = accountFakeBalance.get("NEO").multiply(currencyRate.get("NEOUSDT"));
+        BigDecimal QTUMinDollar = accountFakeBalance.get("QTUM").multiply(currencyRate.get("QTUMUSDT"));
+        balanceInDollars = ADAinDollar.add(BNBinDollar).add(BCCinDollar).add(BTCinDollar).add(ETHinDollar)
+                .add(LTCinDollar).add(NEOinDollar).add(QTUMinDollar).add(accountFakeBalance.get("USDT"));
+        balanceInDollars = balanceInDollars.setScale(scale, RoundingMode.DOWN);
+        return balanceInDollars;
     }
 
     @Override
@@ -71,26 +75,26 @@ public class FakeBalanceImpl implements FakeBalance {
 
     private void initCurrencyRate(){
         currencyRate = new TreeMap<>();
-        currencyRate.put("ADAUSDT", 0.0);
-        currencyRate.put("BNBUSDT", 0.0);
-        currencyRate.put("BCCUSDT", 0.0);
-        currencyRate.put("BTCUSDT", 0.0);
-        currencyRate.put("ETHUSDT", 0.0);
-        currencyRate.put("LTCUSDT", 0.0);
-        currencyRate.put("NEOUSDT", 0.0);
-        currencyRate.put("QTUMUSDT", 0.0);
+        currencyRate.put("ADAUSDT", BigDecimal.ZERO);
+        currencyRate.put("BNBUSDT", BigDecimal.ZERO);
+        currencyRate.put("BCCUSDT", BigDecimal.ZERO);
+        currencyRate.put("BTCUSDT", BigDecimal.ZERO);
+        currencyRate.put("ETHUSDT", BigDecimal.ZERO);
+        currencyRate.put("LTCUSDT", BigDecimal.ZERO);
+        currencyRate.put("NEOUSDT", BigDecimal.ZERO);
+        currencyRate.put("QTUMUSDT", BigDecimal.ZERO);
     }
 
     private void initFakeBalance(){
         accountFakeBalance = new TreeMap<>();
-        accountFakeBalance.put("ADA", 0.0);
-        accountFakeBalance.put("BNB", 0.5);
-        accountFakeBalance.put("BCC", 0.0);
-        accountFakeBalance.put("BTC", 0.0);
-        accountFakeBalance.put("ETH", 0.0);
-        accountFakeBalance.put("LTC", 0.0);
-        accountFakeBalance.put("NEO", 0.0);
-        accountFakeBalance.put("QTUM", 0.0);
-        accountFakeBalance.put("USDT", 20.0);
+        accountFakeBalance.put("ADA", BigDecimal.ZERO);
+        accountFakeBalance.put("BNB", new BigDecimal("0.50000000"));
+        accountFakeBalance.put("BCC", BigDecimal.ZERO);
+        accountFakeBalance.put("BTC", BigDecimal.ZERO);
+        accountFakeBalance.put("ETH", BigDecimal.ZERO);
+        accountFakeBalance.put("LTC", BigDecimal.ZERO);
+        accountFakeBalance.put("NEO", BigDecimal.ZERO);
+        accountFakeBalance.put("QTUM", BigDecimal.ZERO);
+        accountFakeBalance.put("USDT", new BigDecimal("20.00000000"));
     }
 }

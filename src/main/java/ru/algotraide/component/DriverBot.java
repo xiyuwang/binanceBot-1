@@ -2,7 +2,9 @@ package ru.algotraide.component;
 
 import ru.algotraide.object.PairTriangle;
 
+import java.math.BigDecimal;
+
 public interface DriverBot {
-    Double getProfit(Double startAmt, PairTriangle pairTriangle);
-    void buyCycle(Double startAmt, PairTriangle pairTriangle);
+    BigDecimal getProfit(BigDecimal startAmt, PairTriangle pairTriangle);
+    void buyCycle(BigDecimal startAmt, PairTriangle pairTriangle);
 }

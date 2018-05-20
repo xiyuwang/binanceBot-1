@@ -9,16 +9,19 @@ import ru.algotraide.component.MainBot;
 import ru.algotraide.object.PairTriangle;
 
 import java.awt.*;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class MainBotImpl implements MainBot {
 
-    private Double myBalance;
-    private Double percentForBet = 1.0;
-    private Double diffInPresent = 0.4;
-    private Double diff2InPresent = 0.4;
+    private BigDecimal myBalance;
+    private BigDecimal percentForBet;
+    private BigDecimal diffInPresent;
+    private BigDecimal diff2InPresent;
     private List<PairTriangle> pairTriangleList;
     private BalanceCache balanceCache;
     private FakeBalance fakeBalance;
@@ -30,32 +33,35 @@ public class MainBotImpl implements MainBot {
         this.balanceCache = balanceCache;
         this.fakeBalance = fakeBalance;
         pairTriangleList = new ArrayList<>();
+        myBalance = BigDecimal.ZERO;
+        percentForBet = new BigDecimal("1");
+        diffInPresent = new BigDecimal("0.3");
+        diff2InPresent = new BigDecimal("0.4");
         initPairTriangle();
     }
 
     @Override
     public void start() throws InterruptedException {
         while (true) {
-            myBalance = 15.0;
-//            myBalance = Double.valueOf(balanceCache.getAccountBalanceCache().get("USDT").getFree());
-            Double bet = myBalance * percentForBet;
-            Double profit;
-
+            myBalance = new BigDecimal("15");
+//            myBalance = new BigDecimal(balanceCache.getAccountBalanceCache().get("USDT").getFree());
+            BigDecimal bet = myBalance.multiply(percentForBet);
+            BigDecimal profit;
             for (PairTriangle pairTriangle : pairTriangleList) {
                 long t1 = System.currentTimeMillis();
                 profit = driverBot.getProfit(bet, pairTriangle);
-                if (profit >= diffInPresent) {
+                if (profit.compareTo(diffInPresent) >= 0) {
                     System.out.println(balanceCache.getAccountBalanceCache().get("USDT").getFree() + ", " + balanceCache.getAccountBalanceCache().get("BNB").getFree());
                     System.out.printf("%s Diff: %.3f%% \n", pairTriangle.toString(), profit);
                     do {
                         driverBot.buyCycle(bet, pairTriangle);
                         Toolkit.getDefaultToolkit().beep();
-                        System.out.println(balanceCache.getAccountBalanceCache().get("USDT") + ", " + balanceCache.getAccountBalanceCache().get("BNB"));
+                        System.out.println(balanceCache.getAccountBalanceCache().get("USDT").getFree() + ", " + balanceCache.getAccountBalanceCache().get("BNB").getFree());
                         profit = driverBot.getProfit(bet, pairTriangle);
-                    } while (profit >= diff2InPresent);
+                    } while (profit.compareTo(diff2InPresent) >= 0);
                     System.out.println(System.currentTimeMillis() - t1);
                 } else System.out.println(profit);
-                    Thread.sleep(100);
+                Thread.sleep(100);
             }
         }
     }
