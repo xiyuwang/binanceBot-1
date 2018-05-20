@@ -55,9 +55,9 @@ public class DriverBotImpl implements DriverBot {
         Double amtAfterSecondTransaction;
         Double amtAfterThirdTransaction;
         Double coefficient = 1.0015; //Поправочный коэффициент (имитация изменения цены в худшую сторону)
-        Double afterTradeBalance;
         Double beforeTradeBalance;
-        afterTradeBalance = fakeBalance.getAllBalanceInDollars(prices);
+        Double afterTradeBalance;
+        beforeTradeBalance = fakeBalance.getAllBalanceInDollars(prices);
         if (commission == 0.0005) {
             amtAfterFirstTransaction = Double.valueOf(normalizeQuantity(firstPair, startAmt / getPrice(firstPair)));
             fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(firstPair).getQuoteAsset(), startAmt * coefficient);
@@ -79,7 +79,8 @@ public class DriverBotImpl implements DriverBot {
                     }
                     isNotional2 = isNotional(amtAfterSecondTransaction, secondPair);
                 } else {
-                    amtAfterSecondTransaction = Double.valueOf(normalizeQuantity(secondPair, amtAfterFirstTransaction)) * getPrice(secondPair);
+                    Double normAfterFirstTr = Double.valueOf(normalizeQuantity(secondPair, amtAfterFirstTransaction));
+                    amtAfterSecondTransaction = normAfterFirstTr * getPrice(secondPair);
                     fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getBaseAsset(), Double.valueOf(normalizeQuantity(secondPair, amtAfterFirstTransaction)));
                     fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(), amtAfterSecondTransaction);
                     fakeBalance.reduceBalanceBySymbol("BNB", amtAfterSecondTransaction * 0.0005);
@@ -104,12 +105,12 @@ public class DriverBotImpl implements DriverBot {
             fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(thirdPair).getBaseAsset(), Double.valueOf(normalizeQuantity(thirdPair, amtAfterSecondTransaction)));
             fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(thirdPair).getQuoteAsset(), amtAfterThirdTransaction);
             fakeBalance.reduceBalanceBySymbol("BNB", amtAfterThirdTransaction * 0.0005 / getPrice("BNBUSDT"));
-            beforeTradeBalance = fakeBalance.getAllBalanceInDollars(prices);
-            Double d = (beforeTradeBalance - afterTradeBalance) * (100 / startAmt);
+            afterTradeBalance = fakeBalance.getAllBalanceInDollars(prices);
+            Double d = (afterTradeBalance - beforeTradeBalance) * (100 / startAmt);
             fakeBalance.resetBalance();
             boolean isNotional3 = isNotional(amtAfterThirdTransaction, thirdPair);
             if (isNotional1 && isNotional2 && isNotional3) {
-                return (beforeTradeBalance - afterTradeBalance) * (100 / startAmt);
+                return (afterTradeBalance - beforeTradeBalance) * (100 / startAmt);
             } else return 0.0;
         }
 
@@ -282,7 +283,8 @@ public class DriverBotImpl implements DriverBot {
         if (pair.contains("BTC") || pair.contains("ETH")){
             normQty = String.format(Locale.UK, "%.8f", Math.floor(pairQuantity / step) * step);
         } else {
-            normQty = String.format(Locale.UK, "%.8f", Math.round(pairQuantity / step) * step);
+            Double afterFloor = Math.floor(pairQuantity / step) * step;
+            normQty = String.format(Locale.UK, "%.8f", afterFloor);
         }
         return normQty;
     }
