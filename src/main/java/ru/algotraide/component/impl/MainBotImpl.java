@@ -26,6 +26,7 @@ public class MainBotImpl implements MainBot {
     private BalanceCache balanceCache;
     private FakeBalance fakeBalance;
     private DriverBot driverBot;
+    private int progressNum = 0;
 
     @Autowired
     public MainBotImpl(DriverBot driverBot, BalanceCache balanceCache, FakeBalance fakeBalance) {
@@ -35,7 +36,7 @@ public class MainBotImpl implements MainBot {
         pairTriangleList = new ArrayList<>();
         myBalance = BigDecimal.ZERO;
         percentForBet = new BigDecimal("1");
-        diffInPresent = new BigDecimal("0.3");
+        diffInPresent = new BigDecimal("0.001");
         diff2InPresent = new BigDecimal("0.4");
         initPairTriangle();
     }
@@ -43,6 +44,7 @@ public class MainBotImpl implements MainBot {
     @Override
     public void start() throws InterruptedException {
         while (true) {
+
             myBalance = new BigDecimal("15");
 //            myBalance = new BigDecimal(balanceCache.getAccountBalanceCache().get("USDT").getFree());
             BigDecimal bet = myBalance.multiply(percentForBet);
@@ -60,7 +62,7 @@ public class MainBotImpl implements MainBot {
                         profit = driverBot.getProfit(bet, pairTriangle);
                     } while (profit.compareTo(diff2InPresent) >= 0);
                     System.out.println(System.currentTimeMillis() - t1);
-                } else System.out.println(profit);
+                } else /*System.out.println(profit);*/
                 Thread.sleep(100);
             }
         }
@@ -84,4 +86,20 @@ public class MainBotImpl implements MainBot {
         pairTriangleList.add(new PairTriangle("BNBUSDT", "NEOBNB", "NEOUSDT", false));
         pairTriangleList.add(new PairTriangle("BNBUSDT", "QTUMBNB", "QTUMUSDT", false));
     }
+
+    private void showProgress(){
+        if(progressNum == 0){
+            System.out.println("Идет поиск доходной сделки.");
+            ++progressNum;
+        }
+        if(progressNum == 1){
+            System.out.println("Идет поиск доходной сделки..");
+            ++progressNum;
+        }
+        if(progressNum == 2){
+            System.out.println("Идет поиск доходной сделки...");
+            progressNum = 0;
+        }
+    }
+
 }

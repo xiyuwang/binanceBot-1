@@ -133,14 +133,14 @@ public class DriverBotImpl implements DriverBot {
         BigDecimal afterTradeBalance;
         beforeTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
         if (isAllPairTrading(pairTriangle)) {
-            String amtAfterFirstTransaction = buyCoins(startAmt, firstPair, direct, 1);
-            String amtAfterSecondTransaction = buyCoins(new BigDecimal(amtAfterFirstTransaction), secondPair, direct, 2);
-            String amtAfterThirdTransaction = buyCoins(new BigDecimal(amtAfterSecondTransaction), thirdPair, direct, 3);
+            String amtAfterFirstTransaction = TestBuyCoins(startAmt, firstPair, direct, 1);
+            String amtAfterSecondTransaction = TestBuyCoins(new BigDecimal(amtAfterFirstTransaction), secondPair, direct, 2);
+            String amtAfterThirdTransaction = TestBuyCoins(new BigDecimal(amtAfterSecondTransaction), thirdPair, direct, 3);
         }
         afterTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
         profit = afterTradeBalance.subtract(beforeTradeBalance);
         allProfit = allProfit.add(profit);
-        System.out.println("Доход со сделки: " + profit + " | Общий доход: " + allProfit);
+        System.out.println("Доход со сделки: " + profit + " | Общий доход: " + allProfit + " | Общая сумма на кошельке в $: " + fakeBalance.getAllBalanceInDollars(prices));
     }
 
     private String buyCoins(BigDecimal amtForTrade, String pair, boolean direct, int numPair) {
@@ -236,6 +236,14 @@ public class DriverBotImpl implements DriverBot {
                         if (isValidQty(pair, normAfterTr.toString())) {
                             apiRestClient.newOrderTest(NewOrder.marketSell(pair, normAfterTr.toString()));
                             amtAfterTransaction = pairQuantity;
+                        }
+                        if(amtForTrade.compareTo(normAfterTr) > 0){
+                            String newPair = pair.replace("BNB", "USDT");
+                            BigDecimal remain = amtForTrade.subtract(normAfterTr);
+                            pairQuantity = remain.multiply(getPrice(newPair)).toString();
+                            fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(newPair).getBaseAsset(), remain);
+                            fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getQuoteAsset(), new BigDecimal(pairQuantity));
+                            fakeBalance.reduceBalanceBySymbol("BNB", new BigDecimal(pairQuantity).multiply(commission).divide(getPrice("BNBUSDT"), 8, RoundingMode.DOWN));
                         }
                     }
                 } else {
