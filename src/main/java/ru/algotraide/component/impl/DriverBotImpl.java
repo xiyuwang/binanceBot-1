@@ -64,6 +64,9 @@ public class DriverBotImpl implements DriverBot {
         beforeTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
         if (commission.compareTo(new BigDecimal("0.0005")) == 0) {
             amtAfterFirstTransaction = new BigDecimal(normalizeQuantity(firstPair, startAmt.divide(getPrice(firstPair), 8, RoundingMode.DOWN)));
+            if (firstPair.contains("QTUM") && pairTriangle.isDirect()){
+                amtAfterFirstTransaction = new BigDecimal(downgrade(amtAfterFirstTransaction));
+            }
             fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(firstPair).getQuoteAsset(), startAmt.multiply(coefficient));
             fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(firstPair).getBaseAsset(), amtAfterFirstTransaction);
             fakeBalance.reduceBalanceBySymbol("BNB", startAmt.multiply(coefficient).multiply(commission).divide(getPrice("BNBUSDT"), 8, RoundingMode.DOWN));
@@ -89,6 +92,14 @@ public class DriverBotImpl implements DriverBot {
                     fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(), amtAfterSecondTransaction);
                     fakeBalance.reduceBalanceBySymbol("BNB", amtAfterSecondTransaction.multiply(commission));
                     isNotional2 = isNotional(amtAfterSecondTransaction, secondPair);
+//                    if(amtAfterFirstTransaction.compareTo(normAfterFirstTr) > 0){
+//                        String newPair = secondPair.replace("BNB", "USDT");
+//                        BigDecimal remain = amtAfterFirstTransaction.subtract(normAfterFirstTr);
+//                        BigDecimal remainAfterSale = remain.multiply(getPrice(newPair));
+//                        fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(newPair).getBaseAsset(), remain);
+//                        fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(newPair).getQuoteAsset(), remainAfterSale);
+//                        fakeBalance.reduceBalanceBySymbol("BNB", remainAfterSale.multiply(commission).divide(getPrice("BNBUSDT"), 8, RoundingMode.DOWN));
+//                    }
                 }
             } else {
                 if (secondPair.contains("BTC") || secondPair.contains("ETH")) {
@@ -131,16 +142,16 @@ public class DriverBotImpl implements DriverBot {
         BigDecimal profit;
         BigDecimal beforeTradeBalance;
         BigDecimal afterTradeBalance;
-        beforeTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
+//        beforeTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
         if (isAllPairTrading(pairTriangle)) {
-            String amtAfterFirstTransaction = TestBuyCoins(startAmt, firstPair, direct, 1);
-            String amtAfterSecondTransaction = TestBuyCoins(new BigDecimal(amtAfterFirstTransaction), secondPair, direct, 2);
-            String amtAfterThirdTransaction = TestBuyCoins(new BigDecimal(amtAfterSecondTransaction), thirdPair, direct, 3);
+            String amtAfterFirstTransaction = buyCoins(startAmt, firstPair, direct, 1);
+            String amtAfterSecondTransaction = buyCoins(new BigDecimal(amtAfterFirstTransaction), secondPair, direct, 2);
+            String amtAfterThirdTransaction = buyCoins(new BigDecimal(amtAfterSecondTransaction), thirdPair, direct, 3);
         }
-        afterTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
-        profit = afterTradeBalance.subtract(beforeTradeBalance);
-        allProfit = allProfit.add(profit);
-        System.out.println("Доход со сделки: " + profit + " | Общий доход: " + allProfit + " | Общая сумма на кошельке в $: " + fakeBalance.getAllBalanceInDollars(prices));
+//        afterTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
+//        profit = afterTradeBalance.subtract(beforeTradeBalance);
+//        allProfit = allProfit.add(profit);
+//        System.out.println("Доход со сделки: " + profit + " | Общий доход: " + allProfit + " | Общая сумма на кошельке в $: " + fakeBalance.getAllBalanceInDollars(prices));
     }
 
     private String buyCoins(BigDecimal amtForTrade, String pair, boolean direct, int numPair) {
@@ -152,9 +163,12 @@ public class DriverBotImpl implements DriverBot {
             case 1:
                 pairQuantity = amtForTrade.divide(getPrice(pair), 8, RoundingMode.DOWN);
                 normalQuantity = normalizeQuantity(pair, pairQuantity);
+                if (pair.contains("QTUM") && direct){
+                    normalQuantity = downgrade(new BigDecimal(normalQuantity));
+                }
                 if (isValidQty(pair, normalQuantity))
                     amtAfterTransaction = buyOrSell(pair, normalQuantity, numPair, direct);
-                System.out.println("amtAfterTransaction_1 " + amtAfterTransaction);
+//                System.out.println("amtAfterTransaction_1 " + amtAfterTransaction);
                 break;
             case 2:
                 if (direct) {
@@ -164,12 +178,12 @@ public class DriverBotImpl implements DriverBot {
                         if (isValidQty(pair, normalQuantity))
                             amtAfterTransaction = buyOrSell(pair, normalQuantity, numPair, true);
                     } else {
-                        System.out.println("amtForTrade_2 " + amtForTrade);
+//                        System.out.println("amtForTrade_2 " + amtForTrade);
                         normalQuantity = normalizeQuantity(pair, amtForTrade);
-                        System.out.println("amtForTrade_2_norm " + normalQuantity);
+//                        System.out.println("amtForTrade_2_norm " + normalQuantity);
                         if (isValidQty(pair, normalQuantity))
                             amtAfterTransaction = buyOrSell(pair, normalQuantity, numPair, true);
-                        System.out.println("amtAfterTransaction_2 " + amtAfterTransaction);
+//                        System.out.println("amtAfterTransaction_2 " + amtAfterTransaction);
                     }
                 } else {
                     if (pair.contains("BTC") || pair.contains("ETH")) {
@@ -185,12 +199,12 @@ public class DriverBotImpl implements DriverBot {
                 }
                 break;
             case 3:
-                System.out.println("amtForTrade_3 " + amtForTrade);
+//                System.out.println("amtForTrade_3 " + amtForTrade);
                 normalQuantity = normalizeQuantity(pair, amtForTrade);
-                System.out.println("amtForTrade_3_norm " + normalQuantity);
+//                System.out.println("amtForTrade_3_norm " + normalQuantity);
                 if (isValidQty(pair, normalQuantity))
                     amtAfterTransaction = buyOrSell(pair, normalQuantity, numPair, direct);
-                System.out.println("amtAfterTransaction_3 " + amtAfterTransaction);
+//                System.out.println("amtAfterTransaction_3 " + amtAfterTransaction);
                 break;
             default:
         }
@@ -203,6 +217,9 @@ public class DriverBotImpl implements DriverBot {
         switch (numPair) {
             case 1:
                 pairQuantity = normalizeQuantity(pair, amtForTrade.divide(getPrice(pair), 8, RoundingMode.DOWN));
+                if (pair.contains("QTUM") && direct){
+                    pairQuantity = downgrade(new BigDecimal(pairQuantity));
+                }
                 fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getQuoteAsset(), amtForTrade.multiply(coefficient));
                 fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getBaseAsset(), new BigDecimal(pairQuantity));
                 fakeBalance.reduceBalanceBySymbol("BNB", amtForTrade.multiply(coefficient).multiply(commission).divide(getPrice("BNBUSDT"), 8, RoundingMode.DOWN));
@@ -237,14 +254,14 @@ public class DriverBotImpl implements DriverBot {
                             apiRestClient.newOrderTest(NewOrder.marketSell(pair, normAfterTr.toString()));
                             amtAfterTransaction = pairQuantity;
                         }
-                        if(amtForTrade.compareTo(normAfterTr) > 0){
-                            String newPair = pair.replace("BNB", "USDT");
-                            BigDecimal remain = amtForTrade.subtract(normAfterTr);
-                            pairQuantity = remain.multiply(getPrice(newPair)).toString();
-                            fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(newPair).getBaseAsset(), remain);
-                            fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getQuoteAsset(), new BigDecimal(pairQuantity));
-                            fakeBalance.reduceBalanceBySymbol("BNB", new BigDecimal(pairQuantity).multiply(commission).divide(getPrice("BNBUSDT"), 8, RoundingMode.DOWN));
-                        }
+//                        if(amtForTrade.compareTo(normAfterTr) > 0){
+//                            String newPair = pair.replace("BNB", "USDT");
+//                            BigDecimal remain = amtForTrade.subtract(normAfterTr);
+//                            pairQuantity = remain.multiply(getPrice(newPair)).toString();
+//                            fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(newPair).getBaseAsset(), remain);
+//                            fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(newPair).getQuoteAsset(), new BigDecimal(pairQuantity));
+//                            fakeBalance.reduceBalanceBySymbol("BNB", new BigDecimal(pairQuantity).multiply(commission).divide(getPrice("BNBUSDT"), 8, RoundingMode.DOWN));
+//                        }
                     }
                 } else {
                     if (pair.contains("BTC") || pair.contains("ETH")) {
@@ -295,21 +312,12 @@ public class DriverBotImpl implements DriverBot {
         int scale = step.lastIndexOf("1") - 1;
         pairQuantity = pairQuantity.setScale(scale, RoundingMode.DOWN);
         return pairQuantity.toString();
-
-
-//        String normQty;
-//        if (pair.contains("BTC") || pair.contains("ETH")){
-//            normQty = String.format(Locale.UK, "%.8f", Math.floor(pairQuantity / step) * step);
-//        } else {
-//            Double afterFloor = Math.floor(pairQuantity / step) * step;
-//            normQty = String.format(Locale.UK, "%.8f", afterFloor);
-//        }
-//        return normQty;
     }
 
-//    private String normalizeQuantityWithoutRound(Double pairQuantity) {
-//        return String.format(Locale.UK, "%.8f", pairQuantity);
-//    }
+    private String downgrade(BigDecimal pairQuantity) {
+        pairQuantity = pairQuantity.setScale(pairQuantity.scale() - 1, RoundingMode.DOWN);
+        return pairQuantity.toString();
+    }
 
     private Boolean isValidQty(String pair, String normalQuantity) {
         SymbolInfo pairInfo = exchangeInfo.getSymbolInfo(pair);
