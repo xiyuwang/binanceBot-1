@@ -81,9 +81,10 @@ public class BalanceCacheImpl implements BalanceCache {
                             .subtract(new BigDecimal(oldAccountBalanceCache.get("BNB").getFree()));
 
                     System.out.println("------");
-                    System.out.println("До | USDT: " + oldAccountBalanceCache.get("USDT").getFree() + ", BNB: " + oldAccountBalanceCache.get("BNB").getFree() +
-                            ", USDT+BNB в долларах: " + bnbInDollars + " |");
-                    System.out.println("После | USDT: " + accountBalanceCache.get("USDT").getFree() + ", BNB: " + accountBalanceCache.get("BNB").getFree() +
+                    System.out.println("До | USDT: " + oldAccountBalanceCache.get("USDT").getFree() + ", BNB: " +
+                            oldAccountBalanceCache.get("BNB").getFree() + ", USDT+BNB в долларах: " + bnbInDollars + " |");
+                    System.out.println("После | USDT: " + accountBalanceCache.get("USDT").getFree() + ", BNB: " +
+                            accountBalanceCache.get("BNB").getFree() +
                             ", USDT+BNB в долларах: " + bnbInDollars + " |");
                     System.out.println("Доход | USDT: " + UsdtProfit + ", BNB: " + BnbProfit + " |");
                     System.out.println("------");

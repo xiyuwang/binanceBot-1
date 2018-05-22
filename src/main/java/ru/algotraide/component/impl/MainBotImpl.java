@@ -24,6 +24,7 @@ public class MainBotImpl implements MainBot {
     private BalanceCache balanceCache;
     private FakeBalance fakeBalance;
     private DriverBot driverBot;
+    private BigDecimal limit;
 
     @Autowired
     public MainBotImpl(DriverBot driverBot, BalanceCache balanceCache, FakeBalance fakeBalance) {
@@ -35,11 +36,13 @@ public class MainBotImpl implements MainBot {
         percentForBet = new BigDecimal("1");
         diffInPresent = new BigDecimal("0.25");
         diff2InPresent = new BigDecimal("0.4");
+        limit = new BigDecimal("1");
         initPairTriangle();
     }
 
     @Override
     public void start() throws InterruptedException {
+        BigDecimal startBalance = new BigDecimal(balanceCache.getAccountBalanceCache().get("USDT").getFree());
         while (true) {
 
             myBalance = new BigDecimal("15");
@@ -55,6 +58,11 @@ public class MainBotImpl implements MainBot {
                     do {
                         driverBot.buyCycle(bet, pairTriangle);
                         Toolkit.getDefaultToolkit().beep();
+                        BigDecimal diffBalance = startBalance.subtract(new BigDecimal(balanceCache.getAccountBalanceCache().get("USDT").getFree()));
+                        if(diffBalance.compareTo(limit) >= 0){
+                            System.out.printf("Превышен лимит убытка (%s$) \n", limit);
+                            break;
+                        }
 //                        System.out.println(balanceCache.getAccountBalanceCache().get("USDT").getFree() + ", " + balanceCache.getAccountBalanceCache().get("BNB").getFree());
                         profit = driverBot.getProfit(bet, pairTriangle);
                     } while (profit.compareTo(diff2InPresent) >= 0);
