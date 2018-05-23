@@ -52,6 +52,7 @@ public class MainBotImpl implements MainBot {
             for (PairTriangle pairTriangle : pairTriangleList) {
                 long t1 = System.currentTimeMillis();
                 profit = driverBot.getProfit(bet, pairTriangle);
+                System.out.println(profit + " " + pairTriangle);
                 if (profit.compareTo(diffInPresent) >= 0) {
 //                    System.out.println(balanceCache.getAccountBalanceCache().get("USDT").getFree() + ", " + balanceCache.getAccountBalanceCache().get("BNB").getFree());
                     System.out.printf("%s Diff: %.3f%% \n", pairTriangle.toString(), profit);
@@ -67,7 +68,7 @@ public class MainBotImpl implements MainBot {
                         profit = driverBot.getProfit(bet, pairTriangle);
                     } while (profit.compareTo(diff2InPresent) >= 0);
 //                    System.out.println(System.currentTimeMillis() - t1);
-                } else /*System.out.println(profit);*/
+                }
                 Thread.sleep(100);
             }
         }

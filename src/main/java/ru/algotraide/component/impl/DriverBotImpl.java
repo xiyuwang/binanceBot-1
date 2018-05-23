@@ -68,8 +68,10 @@ public class DriverBotImpl implements DriverBot {
         beforeTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
         if (commission.compareTo(new BigDecimal("0.0005")) == 0) {
             amtAfterFirstTransaction = new BigDecimal(normalizeQuantity(firstPair, startAmt.divide(new BigDecimal(getTradeBook(firstPair).getAskPrice()), 8, RoundingMode.DOWN)));
+//            System.out.println("profit afterFirst: " + amtAfterFirstTransaction + "Pair: " + firstPair);
             if (firstPair.contains("QTUM") && pairTriangle.isDirect()){
                 amtAfterFirstTransaction = new BigDecimal(downgrade(amtAfterFirstTransaction));
+//                System.out.println("profit afterFirst: " + amtAfterFirstTransaction);
             }
             fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(firstPair).getQuoteAsset(), startAmt.multiply(coefficient));
             fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(firstPair).getBaseAsset(), amtAfterFirstTransaction);
@@ -80,6 +82,7 @@ public class DriverBotImpl implements DriverBot {
             if (pairTriangle.isDirect()) {
                 if (secondPair.contains("BTC") || secondPair.contains("ETH")) {
                     amtAfterSecondTransaction = new BigDecimal(normalizeQuantity(secondPair, amtAfterFirstTransaction.divide(new BigDecimal(getTradeBook(secondPair).getAskPrice()), 8, RoundingMode.DOWN)));
+//                    System.out.println("profit afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
                     fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(), amtAfterFirstTransaction);
                     fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getBaseAsset(), amtAfterSecondTransaction);
                     if (secondPair.contains("BTC")) {
@@ -92,6 +95,7 @@ public class DriverBotImpl implements DriverBot {
                 } else {
                     BigDecimal normAfterFirstTr = new BigDecimal(normalizeQuantity(secondPair, amtAfterFirstTransaction));
                     amtAfterSecondTransaction = normAfterFirstTr.multiply(new BigDecimal(getTradeBook(secondPair).getBidPrice()));
+//                    System.out.println("profit afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
                     fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getBaseAsset(), normAfterFirstTr);
                     fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(), amtAfterSecondTransaction);
                     fakeBalance.reduceBalanceBySymbol("BNB", amtAfterSecondTransaction.multiply(commission));
@@ -109,12 +113,14 @@ public class DriverBotImpl implements DriverBot {
                 if (secondPair.contains("BTC") || secondPair.contains("ETH")) {
                     BigDecimal normAfterFirstTr = new BigDecimal(normalizeQuantity(secondPair, amtAfterFirstTransaction));
                     amtAfterSecondTransaction = normAfterFirstTr.multiply(new BigDecimal(getTradeBook(secondPair).getBidPrice()));
+//                    System.out.println("profit afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
                     fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getBaseAsset(), normAfterFirstTr);
                     fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(), amtAfterSecondTransaction);
                     fakeBalance.reduceBalanceBySymbol("BNB", amtAfterSecondTransaction.multiply(commission));
                     isNotional2 = isNotional(amtAfterSecondTransaction, secondPair);
                 } else {
                     amtAfterSecondTransaction = new BigDecimal(normalizeQuantity(secondPair, amtAfterFirstTransaction.divide(new BigDecimal(getTradeBook(secondPair).getAskPrice()), 8, RoundingMode.DOWN)));
+//                    System.out.println("profit afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
                     fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(), amtAfterFirstTransaction.multiply(coefficient));
                     fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getBaseAsset(), amtAfterSecondTransaction);
                     fakeBalance.reduceBalanceBySymbol("BNB", amtAfterFirstTransaction.multiply(coefficient.multiply(commission)));
@@ -123,6 +129,7 @@ public class DriverBotImpl implements DriverBot {
             }
             BigDecimal normAfterThirdTr = new BigDecimal(normalizeQuantity(thirdPair, amtAfterSecondTransaction));
             amtAfterThirdTransaction = normAfterThirdTr.multiply(new BigDecimal(getTradeBook(thirdPair).getBidPrice()));
+//            System.out.println("profit afterThird: " + amtAfterThirdTransaction + "Pair: " + thirdPair);
             fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(thirdPair).getBaseAsset(), normAfterThirdTr);
             fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(thirdPair).getQuoteAsset(), amtAfterThirdTransaction);
             fakeBalance.reduceBalanceBySymbol("BNB", amtAfterThirdTransaction.multiply(commission).divide(getPrice("BNBUSDT"), 8, RoundingMode.DOWN));
@@ -149,8 +156,11 @@ public class DriverBotImpl implements DriverBot {
         beforeTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
         if (isAllPairTrading(pairTriangle)) {
             String amtAfterFirstTransaction = TestBuyCoins(startAmt, firstPair, direct, 1);
+//            System.out.println("buyCycle afterFirst: " + amtAfterFirstTransaction + "Pair: " + firstPair);
             String amtAfterSecondTransaction = TestBuyCoins(new BigDecimal(amtAfterFirstTransaction), secondPair, direct, 2);
+//            System.out.println("buyCycle afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
             String amtAfterThirdTransaction = TestBuyCoins(new BigDecimal(amtAfterSecondTransaction), thirdPair, direct, 3);
+//            System.out.println("buyCycle afterThird: " + amtAfterThirdTransaction + "Pair: " + thirdPair);
         }
         afterTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
         profit = afterTradeBalance.subtract(beforeTradeBalance);

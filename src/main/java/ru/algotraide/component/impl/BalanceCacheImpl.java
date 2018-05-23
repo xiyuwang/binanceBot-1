@@ -34,6 +34,7 @@ public class BalanceCacheImpl implements BalanceCache {
     public BalanceCacheImpl(String apiKey, String secret) {
         this.clientFactory = BinanceApiClientFactory.newInstance(apiKey, secret);
         this.restClient = clientFactory.newRestClient();
+        oldAccountBalanceCache = new TreeMap<>();
         this.listenKey = initializeAssetBalanceCacheAndStreamSession();
         startAccountBalanceEventStreaming(listenKey);
     }
@@ -49,7 +50,7 @@ public class BalanceCacheImpl implements BalanceCache {
         this.accountBalanceCache = new TreeMap<>();
         for (AssetBalance assetBalance : account.getBalances()) {
             accountBalanceCache.put(assetBalance.getAsset(), assetBalance);
-            oldAccountBalanceCache = accountBalanceCache;
+            oldAccountBalanceCache.putAll(accountBalanceCache);
         }
 
         return restClient.startUserDataStream();
@@ -67,7 +68,6 @@ public class BalanceCacheImpl implements BalanceCache {
                 for (AssetBalance assetBalance : response.getAccountUpdateEvent().getBalances()) {
                     accountBalanceCache.put(assetBalance.getAsset(), assetBalance);
                 }
-
                 new Thread(() -> {
                     List<TickerPrice> tickerPrice = restClient.getAllPrices();
                     String BNBUSDTPrice = tickerPrice.stream().filter(s -> s.getSymbol().equals("BNBUSDT")).findFirst().get().getPrice();
@@ -91,8 +91,6 @@ public class BalanceCacheImpl implements BalanceCache {
 
                     oldAccountBalanceCache = accountBalanceCache;
                 }).start();
-
-
             }
         });
     }
