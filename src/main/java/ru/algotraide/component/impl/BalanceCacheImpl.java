@@ -11,7 +11,6 @@ import ru.algotraide.component.BalanceCache;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.binance.api.client.domain.event.UserDataUpdateEvent.UserDataUpdateEventType.ACCOUNT_UPDATE;
@@ -46,13 +45,11 @@ public class BalanceCacheImpl implements BalanceCache {
      */
     private String initializeAssetBalanceCacheAndStreamSession() {
         Account account = restClient.getAccount();
-
         this.accountBalanceCache = new TreeMap<>();
         for (AssetBalance assetBalance : account.getBalances()) {
             accountBalanceCache.put(assetBalance.getAsset(), assetBalance);
             oldAccountBalanceCache.putAll(accountBalanceCache);
         }
-
         return restClient.startUserDataStream();
     }
 
@@ -68,29 +65,7 @@ public class BalanceCacheImpl implements BalanceCache {
                 for (AssetBalance assetBalance : response.getAccountUpdateEvent().getBalances()) {
                     accountBalanceCache.put(assetBalance.getAsset(), assetBalance);
                 }
-                new Thread(() -> {
-                    List<TickerPrice> tickerPrice = restClient.getAllPrices();
-                    String BNBUSDTPrice = tickerPrice.stream().filter(s -> s.getSymbol().equals("BNBUSDT")).findFirst().get().getPrice();
-                    String BnbOnBalanceFree = accountBalanceCache.get("BNB").getFree();
-                    String BnbOnBalanceLocked = accountBalanceCache.get("BNB").getLocked();
-                    BigDecimal allBnb = new BigDecimal(BnbOnBalanceFree).add(new BigDecimal(BnbOnBalanceLocked));
-                    BigDecimal bnbInDollars = allBnb.multiply(new BigDecimal(BNBUSDTPrice));
-                    BigDecimal UsdtProfit = new BigDecimal(accountBalanceCache.get("USDT").getFree())
-                            .subtract(new BigDecimal(oldAccountBalanceCache.get("USDT").getFree()));
-                    BigDecimal BnbProfit = new BigDecimal(accountBalanceCache.get("BNB").getFree())
-                            .subtract(new BigDecimal(oldAccountBalanceCache.get("BNB").getFree()));
-
-                    System.out.println("------");
-                    System.out.println("До | USDT: " + oldAccountBalanceCache.get("USDT").getFree() + ", BNB: " +
-                            oldAccountBalanceCache.get("BNB").getFree() + ", USDT+BNB в долларах: " + bnbInDollars + " |");
-                    System.out.println("После | USDT: " + accountBalanceCache.get("USDT").getFree() + ", BNB: " +
-                            accountBalanceCache.get("BNB").getFree() +
-                            ", USDT+BNB в долларах: " + bnbInDollars + " |");
-                    System.out.println("Доход | USDT: " + UsdtProfit + ", BNB: " + BnbProfit + " |");
-                    System.out.println("------");
-
-                    oldAccountBalanceCache = accountBalanceCache;
-                }).start();
+                viewInfo();
             }
         });
     }
@@ -100,5 +75,29 @@ public class BalanceCacheImpl implements BalanceCache {
      */
     public Map<String, AssetBalance> getAccountBalanceCache() {
         return accountBalanceCache;
+    }
+
+    public void viewInfo(){
+        new Thread(() -> {
+            List<TickerPrice> tickerPrice = restClient.getAllPrices();
+            String BNBUSDTPrice = tickerPrice.stream().filter(s -> s.getSymbol().equals("BNBUSDT")).findFirst().get().getPrice();
+            String BnbOnBalanceFree = accountBalanceCache.get("BNB").getFree();
+            String BnbOnBalanceLocked = accountBalanceCache.get("BNB").getLocked();
+            BigDecimal allBnb = new BigDecimal(BnbOnBalanceFree).add(new BigDecimal(BnbOnBalanceLocked));
+            BigDecimal bnbInDollars = allBnb.multiply(new BigDecimal(BNBUSDTPrice));
+            BigDecimal UsdtProfit = new BigDecimal(accountBalanceCache.get("USDT").getFree())
+                    .subtract(new BigDecimal(oldAccountBalanceCache.get("USDT").getFree()));
+            BigDecimal BnbProfit = new BigDecimal(accountBalanceCache.get("BNB").getFree())
+                    .subtract(new BigDecimal(oldAccountBalanceCache.get("BNB").getFree()));
+            System.out.println("------");
+            System.out.println("До | USDT: " + oldAccountBalanceCache.get("USDT").getFree() + ", BNB: " +
+                    oldAccountBalanceCache.get("BNB").getFree() + ", USDT+BNB в долларах: " + bnbInDollars + " |");
+            System.out.println("После | USDT: " + accountBalanceCache.get("USDT").getFree() + ", BNB: " +
+                    accountBalanceCache.get("BNB").getFree() +
+                    ", USDT+BNB в долларах: " + bnbInDollars + " |");
+            System.out.println("Доход | USDT: " + UsdtProfit + ", BNB: " + BnbProfit + " |");
+            System.out.println("------");
+            oldAccountBalanceCache.putAll(accountBalanceCache);
+        }).start();
     }
 }
