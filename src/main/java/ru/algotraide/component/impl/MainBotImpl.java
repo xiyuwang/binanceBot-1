@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ru.algotraide.utils.CalcUtils.*;
+
 @Component
 public class MainBotImpl implements MainBot {
 
@@ -22,44 +24,44 @@ public class MainBotImpl implements MainBot {
     private BigDecimal diff2InPresent;
     private List<PairTriangle> pairTriangleList;
     private BalanceCache balanceCache;
-    private FakeBalance fakeBalance;
     private DriverBot driverBot;
     private BigDecimal limit;
+    private boolean testMode;
 
     @Autowired
     public MainBotImpl(DriverBot driverBot, BalanceCache balanceCache, FakeBalance fakeBalance) {
         this.driverBot = driverBot;
         this.balanceCache = balanceCache;
-        this.fakeBalance = fakeBalance;
         pairTriangleList = new ArrayList<>();
         myBalance = BigDecimal.ZERO;
         percentForBet = new BigDecimal("1");
         diffInPresent = new BigDecimal("0.25");
         diff2InPresent = new BigDecimal("0.4");
         limit = new BigDecimal("1");
+        testMode = true;
         initPairTriangle();
     }
 
     @Override
     public void start() throws InterruptedException {
-        BigDecimal startBalance = new BigDecimal(balanceCache.getAccountBalanceCache().get("USDT").getFree());
+        BigDecimal startBalance = toBigDec(balanceCache.getAccountBalanceCache().get("USDT").getFree());
         while (true) {
 
-            myBalance = new BigDecimal("15");
+            myBalance = toBigDec("15");
 //            myBalance = new BigDecimal(balanceCache.getAccountBalanceCache().get("USDT").getFree());
-            BigDecimal bet = myBalance.multiply(percentForBet);
+            BigDecimal bet = multiply(myBalance, percentForBet);
             BigDecimal profit;
             for (PairTriangle pairTriangle : pairTriangleList) {
                 long t1 = System.currentTimeMillis();
                 profit = driverBot.getProfit(bet, pairTriangle);
-                System.out.println(profit + " " + pairTriangle);
+//                System.out.println(profit + " " + pairTriangle);
                 if (profit.compareTo(diffInPresent) >= 0) {
 //                    System.out.println(balanceCache.getAccountBalanceCache().get("USDT").getFree() + ", " + balanceCache.getAccountBalanceCache().get("BNB").getFree());
                     System.out.printf("%s Diff: %.3f%% \n", pairTriangle.toString(), profit);
                     do {
-                        driverBot.buyCycle(bet, pairTriangle, true);
+                        driverBot.buyCycle(bet, pairTriangle, testMode);
                         Toolkit.getDefaultToolkit().beep();
-                        BigDecimal diffBalance = startBalance.subtract(new BigDecimal(balanceCache.getAccountBalanceCache().get("USDT").getFree()));
+                        BigDecimal diffBalance = subtract(startBalance, toBigDec(balanceCache.getAccountBalanceCache().get("USDT").getFree()));
                         if(diffBalance.compareTo(limit) >= 0){
                             System.out.printf("Превышен лимит убытка (%s$) \n", limit);
                             break;
@@ -91,5 +93,22 @@ public class MainBotImpl implements MainBot {
         pairTriangleList.add(new PairTriangle("BNBUSDT", "LTCBNB", "LTCUSDT", false));
         pairTriangleList.add(new PairTriangle("BNBUSDT", "NEOBNB", "NEOUSDT", false));
         pairTriangleList.add(new PairTriangle("BNBUSDT", "QTUMBNB", "QTUMUSDT", false));
+
+        pairTriangleList.add(new PairTriangle("BTCUSDT", "ADABTC", "ADAUSDT", true));
+        pairTriangleList.add(new PairTriangle("BTCUSDT", "BCCBTC", "BCCUSDT", true));
+        pairTriangleList.add(new PairTriangle("BTCUSDT", "BNBBTC", "BNBUSDT", true));
+        pairTriangleList.add(new PairTriangle("BTCUSDT", "ETHBTC", "ETHUSDT", true));
+        pairTriangleList.add(new PairTriangle("BTCUSDT", "LTCBTC", "LTCUSDT", true));
+        pairTriangleList.add(new PairTriangle("BTCUSDT", "NEOBTC", "NEOUSDT", true));
+        pairTriangleList.add(new PairTriangle("BTCUSDT", "QTUMBTC", "QTUMUSDT", true));
+        pairTriangleList.add(new PairTriangle("BTCUSDT", "XRPBTC", "XRPUSDT", true));
+
+        pairTriangleList.add(new PairTriangle("ETHUSDT", "ADAETH", "ADAUSDT", true));
+        pairTriangleList.add(new PairTriangle("ETHUSDT", "BCCETH", "BCCUSDT", true));
+        pairTriangleList.add(new PairTriangle("ETHUSDT", "BNBETH", "BNBUSDT", true));
+        pairTriangleList.add(new PairTriangle("ETHUSDT", "LTCETH", "LTCUSDT", true));
+        pairTriangleList.add(new PairTriangle("ETHUSDT", "NEOETH", "NEOUSDT", true));
+        pairTriangleList.add(new PairTriangle("ETHUSDT", "QTUMETH", "QTUMUSDT", true));
+        pairTriangleList.add(new PairTriangle("ETHUSDT", "XRPETH", "XRPUSDT", true));
     }
 }

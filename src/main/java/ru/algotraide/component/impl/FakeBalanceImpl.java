@@ -62,8 +62,9 @@ public class FakeBalanceImpl implements FakeBalance {
         BigDecimal LTCinDollar = accountFakeBalance.get("LTC").multiply(currencyRate.get("LTCUSDT"));
         BigDecimal NEOinDollar = accountFakeBalance.get("NEO").multiply(currencyRate.get("NEOUSDT"));
         BigDecimal QTUMinDollar = accountFakeBalance.get("QTUM").multiply(currencyRate.get("QTUMUSDT"));
+        BigDecimal XRPinDollar = accountFakeBalance.get("XRP").multiply(currencyRate.get("XRPUSDT"));
         balanceInDollars = ADAinDollar.add(BNBinDollar).add(BCCinDollar).add(BTCinDollar).add(ETHinDollar)
-                .add(LTCinDollar).add(NEOinDollar).add(QTUMinDollar).add(accountFakeBalance.get("USDT"));
+                .add(LTCinDollar).add(NEOinDollar).add(QTUMinDollar).add(XRPinDollar).add(accountFakeBalance.get("USDT"));
         balanceInDollars = balanceInDollars.setScale(scale, RoundingMode.DOWN);
         return balanceInDollars;
     }
@@ -83,6 +84,7 @@ public class FakeBalanceImpl implements FakeBalance {
         currencyRate.put("LTCUSDT", BigDecimal.ZERO);
         currencyRate.put("NEOUSDT", BigDecimal.ZERO);
         currencyRate.put("QTUMUSDT", BigDecimal.ZERO);
+        currencyRate.put("XRPUSDT", BigDecimal.ZERO);
     }
 
     private void initFakeBalance(){
@@ -95,6 +97,7 @@ public class FakeBalanceImpl implements FakeBalance {
         accountFakeBalance.put("LTC", BigDecimal.ZERO);
         accountFakeBalance.put("NEO", BigDecimal.ZERO);
         accountFakeBalance.put("QTUM", BigDecimal.ZERO);
+        accountFakeBalance.put("XRP", BigDecimal.ZERO);
         accountFakeBalance.put("USDT", new BigDecimal("20.00000000"));
     }
 }
