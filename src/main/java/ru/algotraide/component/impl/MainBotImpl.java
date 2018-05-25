@@ -57,7 +57,7 @@ public class MainBotImpl implements MainBot {
 //                    System.out.println(balanceCache.getAccountBalanceCache().get("USDT").getFree() + ", " + balanceCache.getAccountBalanceCache().get("BNB").getFree());
                     System.out.printf("%s Diff: %.3f%% \n", pairTriangle.toString(), profit);
                     do {
-                        driverBot.buyCycle(bet, pairTriangle);
+                        driverBot.buyCycle(bet, pairTriangle, true);
                         Toolkit.getDefaultToolkit().beep();
                         BigDecimal diffBalance = startBalance.subtract(new BigDecimal(balanceCache.getAccountBalanceCache().get("USDT").getFree()));
                         if(diffBalance.compareTo(limit) >= 0){

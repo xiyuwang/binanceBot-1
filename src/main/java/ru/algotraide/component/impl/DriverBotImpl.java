@@ -64,87 +64,28 @@ public class DriverBotImpl implements DriverBot {
         BigDecimal amtAfterThirdTransaction;
         BigDecimal beforeTradeBalance;
         BigDecimal afterTradeBalance;
+        boolean isNotional1 = false;
+        boolean isNotional2 = false;
+        boolean isNotional3 = false;
         beforeTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
         if (commission.compareTo(toBigDec("0.0005")) == 0) {
-            amtAfterFirstTransaction = normalizeQuantity(firstPair, divide(startAmt, toBigDec(getTradeBook(firstPair).getAskPrice())));
-//            System.out.println("profit afterFirst: " + amtAfterFirstTransaction + "Pair: " + firstPair);
-            if (firstPair.contains("QTUM") && pairTriangle.isDirect()) {
-                amtAfterFirstTransaction = downGrade(amtAfterFirstTransaction);
-//                System.out.println("profit afterFirst: " + amtAfterFirstTransaction);
-            }
-            fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(firstPair).getQuoteAsset(), multiply(startAmt, coefficient));
-            fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(firstPair).getBaseAsset(), amtAfterFirstTransaction);
-            fakeBalance.reduceBalanceBySymbol("BNB", divide(multiply(multiply(startAmt, coefficient), commission), getPrice("BNBUSDT")));
-            boolean isNotional1 = isNotional(amtAfterFirstTransaction, firstPair);
-
-            boolean isNotional2;
-            if (pairTriangle.isDirect()) {
-                if (secondPair.contains("BTC") || secondPair.contains("ETH")) {
-                    amtAfterSecondTransaction = normalizeQuantity(secondPair, divide(amtAfterFirstTransaction, toBigDec(getTradeBook(secondPair).getAskPrice())));
-//                    System.out.println("profit afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
-                    fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(), amtAfterFirstTransaction);
-                    fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getBaseAsset(), amtAfterSecondTransaction);
-                    if (secondPair.contains("BTC")) {
-                        fakeBalance.reduceBalanceBySymbol("BNB", divide(multiply(amtAfterFirstTransaction, commission), getPrice("BNBBTC")));
-                    }
-                    if (secondPair.contains("ETH")) {
-                        fakeBalance.reduceBalanceBySymbol("BNB", divide(multiply(amtAfterFirstTransaction, commission), getPrice("BNBETH")));
-                    }
-                    isNotional2 = isNotional(amtAfterSecondTransaction, secondPair);
-                } else {
-                    BigDecimal normAfterFirstTr = normalizeQuantity(secondPair, amtAfterFirstTransaction);
-                    amtAfterSecondTransaction = multiply(normAfterFirstTr, getTradeBook(secondPair).getBidPrice());
-//                    System.out.println("profit afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
-                    fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getBaseAsset(), normAfterFirstTr);
-                    fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(), amtAfterSecondTransaction);
-                    fakeBalance.reduceBalanceBySymbol("BNB", multiply(amtAfterSecondTransaction, commission));
-                    isNotional2 = isNotional(amtAfterSecondTransaction, secondPair);
-//                    if(amtAfterFirstTransaction.compareTo(normAfterFirstTr) > 0){
-//                        String newPair = secondPair.replace("BNB", "USDT");
-//                        BigDecimal remain = subtract(amtAfterFirstTransaction, normAfterFirstTr);
-//                        BigDecimal remainAfterSale = multiply(remain, getPrice(newPair));
-//                        fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(newPair).getBaseAsset(), remain);
-//                        fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(newPair).getQuoteAsset(), remainAfterSale);
-//                        fakeBalance.reduceBalanceBySymbol("BNB", divide(multiply(remainAfterSale, commission), getPrice("BNBUSDT")));
-//                    }
-                }
-            } else {
-                if (secondPair.contains("BTC") || secondPair.contains("ETH")) {
-                    BigDecimal normAfterFirstTr = normalizeQuantity(secondPair, amtAfterFirstTransaction);
-                    amtAfterSecondTransaction = multiply(normAfterFirstTr, getTradeBook(secondPair).getBidPrice());
-//                    System.out.println("profit afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
-                    fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getBaseAsset(), normAfterFirstTr);
-                    fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(), amtAfterSecondTransaction);
-                    fakeBalance.reduceBalanceBySymbol("BNB", multiply(amtAfterSecondTransaction, commission));
-                    isNotional2 = isNotional(amtAfterSecondTransaction, secondPair);
-                } else {
-                    amtAfterSecondTransaction = normalizeQuantity(secondPair, divide(amtAfterFirstTransaction, toBigDec(getTradeBook(secondPair).getAskPrice())));
-//                    System.out.println("profit afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
-                    fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getQuoteAsset(),  multiply(amtAfterFirstTransaction, coefficient));
-                    fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(secondPair).getBaseAsset(), amtAfterSecondTransaction);
-                    fakeBalance.reduceBalanceBySymbol("BNB", multiply(multiply(amtAfterFirstTransaction, coefficient), commission));
-                    isNotional2 = isNotional(amtAfterSecondTransaction, secondPair);
-                }
-            }
-            BigDecimal normAfterThirdTr = normalizeQuantity(thirdPair, amtAfterSecondTransaction);
-            amtAfterThirdTransaction = multiply(normAfterThirdTr, getTradeBook(thirdPair).getBidPrice());
-//            System.out.println("profit afterThird: " + amtAfterThirdTransaction + "Pair: " + thirdPair);
-            fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(thirdPair).getBaseAsset(), normAfterThirdTr);
-            fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(thirdPair).getQuoteAsset(), amtAfterThirdTransaction);
-            fakeBalance.reduceBalanceBySymbol("BNB", divide(multiply(amtAfterThirdTransaction, commission), getPrice("BNBUSDT")));
-            afterTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
-            BigDecimal profit = divide(multiply(subtract(afterTradeBalance, beforeTradeBalance), toBigDec("100")), startAmt);
-            fakeBalance.resetBalance();
-            boolean isNotional3 = isNotional(amtAfterThirdTransaction, thirdPair);
-            if (isNotional1 && isNotional2 && isNotional3) {
-                return (profit);
-            } else return BigDecimal.ZERO;
+            amtAfterFirstTransaction = testBuyCoins(startAmt, firstPair, pairTriangle.isDirect(), 1, false);
+            isNotional1 = isNotional(amtAfterFirstTransaction, firstPair);
+            amtAfterSecondTransaction = testBuyCoins(amtAfterFirstTransaction, secondPair, pairTriangle.isDirect(), 2, false);
+            isNotional2 = isNotional(amtAfterSecondTransaction, secondPair);
+            amtAfterThirdTransaction = testBuyCoins(amtAfterSecondTransaction, thirdPair, pairTriangle.isDirect(), 3, false);
+            isNotional3 = isNotional(amtAfterThirdTransaction, thirdPair);
         }
-        return BigDecimal.ZERO;
+        afterTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
+        BigDecimal profit = divide(multiply(subtract(afterTradeBalance, beforeTradeBalance), toBigDec("100")), startAmt);
+        fakeBalance.resetBalance();
+        if (isNotional1 && isNotional2 && isNotional3) {
+            return (profit);
+        } else return BigDecimal.ZERO;
     }
 
     @Override
-    public void buyCycle(BigDecimal startAmt, PairTriangle pairTriangle) {
+    public void buyCycle(BigDecimal startAmt, PairTriangle pairTriangle, boolean test) {
         String firstPair = pairTriangle.getFirstPair();
         String secondPair = pairTriangle.getSecondPair();
         String thirdPair = pairTriangle.getThirdPair();
@@ -152,29 +93,37 @@ public class DriverBotImpl implements DriverBot {
         BigDecimal profit;
         BigDecimal beforeTradeBalance;
         BigDecimal afterTradeBalance;
-        beforeTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
         if (isAllPairTrading(pairTriangle)) {
-            BigDecimal amtAfterFirstTransaction = TestBuyCoins(startAmt, firstPair, direct, 1);
+            if (test) {
+                beforeTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
+                BigDecimal amtAfterFirstTransaction = testBuyCoins(startAmt, firstPair, direct, 1, true);
 //            System.out.println("buyCycle afterFirst: " + amtAfterFirstTransaction + "Pair: " + firstPair);
-            BigDecimal amtAfterSecondTransaction = TestBuyCoins(amtAfterFirstTransaction, secondPair, direct, 2);
+                BigDecimal amtAfterSecondTransaction = testBuyCoins(amtAfterFirstTransaction, secondPair, direct, 2, true);
 //            System.out.println("buyCycle afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
-            BigDecimal amtAfterThirdTransaction = TestBuyCoins(amtAfterSecondTransaction, thirdPair, direct, 3);
+                BigDecimal amtAfterThirdTransaction = testBuyCoins(amtAfterSecondTransaction, thirdPair, direct, 3, true);
 //            System.out.println("buyCycle afterThird: " + amtAfterThirdTransaction + "Pair: " + thirdPair);
+                afterTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
+                profit = subtract(afterTradeBalance, beforeTradeBalance);
+                allProfit = add(allProfit, profit);
+                System.out.println("Доход со сделки: " + profit + " | Общий доход: " + allProfit + " | Общая сумма на кошельке в $: " + fakeBalance.getAllBalanceInDollars(prices));
+            } else {
+                BigDecimal amtAfterFirstTransaction = buyCoins(startAmt, firstPair, direct, 1);
+//            System.out.println("buyCycle afterFirst: " + amtAfterFirstTransaction + "Pair: " + firstPair);
+                BigDecimal amtAfterSecondTransaction = buyCoins(amtAfterFirstTransaction, secondPair, direct, 2);
+//            System.out.println("buyCycle afterSecond: " + amtAfterSecondTransaction + "Pair: " + secondPair);
+                BigDecimal amtAfterThirdTransaction = buyCoins(amtAfterSecondTransaction, thirdPair, direct, 3);
+//            System.out.println("buyCycle afterThird: " + amtAfterThirdTransaction + "Pair: " + thirdPair);
+            }
         }
-        afterTradeBalance = fakeBalance.getBalanceBySymbol("USDT");
-        profit = subtract(afterTradeBalance, beforeTradeBalance);
-        allProfit = add(allProfit, profit);
-        System.out.println("Доход со сделки: " + profit + " | Общий доход: " + allProfit + " | Общая сумма на кошельке в $: " + fakeBalance.getAllBalanceInDollars(prices));
     }
 
     private BigDecimal buyCoins(BigDecimal amtForTrade, String pair, boolean direct, int numPair) {
         BigDecimal pairQuantity;
         BigDecimal normalQuantity;
         BigDecimal amtAfterTransaction = BigDecimal.ZERO;
-
         switch (numPair) {
             case 1:
-                pairQuantity = divide(amtForTrade, getPrice(pair));
+                pairQuantity = divide(amtForTrade, toBigDec(getTradeBook(pair).getAskPrice()));
                 normalQuantity = normalizeQuantity(pair, pairQuantity);
                 if (pair.contains("QTUM") && direct) {
                     normalQuantity = downGrade(normalQuantity);
@@ -186,7 +135,7 @@ public class DriverBotImpl implements DriverBot {
             case 2:
                 if (direct) {
                     if (pair.contains("BTC") || pair.contains("ETH")) {
-                        pairQuantity = divide(amtForTrade, getPrice(pair));
+                        pairQuantity = divide(amtForTrade, toBigDec(getTradeBook(pair).getAskPrice()));
                         normalQuantity = normalizeQuantity(pair, pairQuantity);
                         if (isValidQty(pair, normalQuantity))
                             amtAfterTransaction = buyOrSell(pair, normalQuantity.toString(), numPair, true);
@@ -204,7 +153,7 @@ public class DriverBotImpl implements DriverBot {
                         if (isValidQty(pair, normalQuantity))
                             amtAfterTransaction = buyOrSell(pair, normalQuantity.toString(), numPair, false);
                     } else {
-                        pairQuantity = amtForTrade.divide(getPrice(pair), 8, RoundingMode.DOWN);
+                        pairQuantity = divide(amtForTrade, toBigDec(getTradeBook(pair).getAskPrice()));
                         normalQuantity = normalizeQuantity(pair, pairQuantity);
                         if (isValidQty(pair, normalQuantity))
                             amtAfterTransaction = buyOrSell(pair, normalQuantity.toString(), numPair, false);
@@ -258,7 +207,7 @@ public class DriverBotImpl implements DriverBot {
         return toBigDec(amtAfterTransaction);
     }
 
-    private BigDecimal TestBuyCoins(BigDecimal amtForTrade, String pair, boolean direct, int numPair) {
+    private BigDecimal testBuyCoins(BigDecimal amtForTrade, String pair, boolean direct, int numPair, boolean test) {
         BigDecimal pairQuantity;
         BigDecimal amtAfterTransaction = BigDecimal.ZERO;
         switch (numPair) {
@@ -270,10 +219,10 @@ public class DriverBotImpl implements DriverBot {
                 fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getQuoteAsset(), multiply(amtForTrade, coefficient));
                 fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getBaseAsset(), pairQuantity);
                 fakeBalance.reduceBalanceBySymbol("BNB", divide(multiply(multiply(amtForTrade, coefficient), commission), getPrice("BNBUSDT")));
-                if (isValidQty(pair, pairQuantity)) {
+                if (isValidQty(pair, pairQuantity) && test) {
                     apiRestClient.newOrderTest(NewOrder.marketBuy(pair, pairQuantity.toString()));
-                    amtAfterTransaction = pairQuantity;
                 }
+                amtAfterTransaction = pairQuantity;
                 break;
             case 2:
                 if (direct) {
@@ -287,20 +236,20 @@ public class DriverBotImpl implements DriverBot {
                         if (pair.contains("ETH")) {
                             fakeBalance.reduceBalanceBySymbol("BNB", divide(multiply(amtForTrade, commission), getPrice("BNBETH")));
                         }
-                        if (isValidQty(pair, pairQuantity)) {
+                        if (isValidQty(pair, pairQuantity) && test) {
                             apiRestClient.newOrderTest(NewOrder.marketBuy(pair, pairQuantity.toString()));
-                            amtAfterTransaction = pairQuantity;
                         }
+                        amtAfterTransaction = pairQuantity;
                     } else {
                         BigDecimal normAfterTr = normalizeQuantity(pair, amtForTrade);
                         pairQuantity = multiply(normAfterTr, getTradeBook(pair).getBidPrice());
                         fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getBaseAsset(), normAfterTr);
                         fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getQuoteAsset(), pairQuantity);
                         fakeBalance.reduceBalanceBySymbol("BNB", multiply(pairQuantity, commission));
-                        if (isValidQty(pair, normAfterTr)) {
+                        if (isValidQty(pair, normAfterTr) && test) {
                             apiRestClient.newOrderTest(NewOrder.marketSell(pair, normAfterTr.toString()));
-                            amtAfterTransaction = pairQuantity;
                         }
+                        amtAfterTransaction = pairQuantity;
 //                        if(amtForTrade.compareTo(normAfterTr) > 0){
 //                            String newPair = pair.replace("BNB", "USDT");
 //                            BigDecimal remain = subtract(amtForTrade, normAfterTr);
@@ -317,19 +266,19 @@ public class DriverBotImpl implements DriverBot {
                         fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getBaseAsset(), normAfterTr);
                         fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getQuoteAsset(), pairQuantity);
                         fakeBalance.reduceBalanceBySymbol("BNB", multiply(pairQuantity, commission));
-                        if (isValidQty(pair, normAfterTr)) {
+                        if (isValidQty(pair, normAfterTr) && test) {
                             apiRestClient.newOrderTest(NewOrder.marketSell(pair, normAfterTr.toString()));
-                            amtAfterTransaction = pairQuantity;
                         }
+                        amtAfterTransaction = pairQuantity;
                     } else {
                         pairQuantity = normalizeQuantity(pair, divide(amtForTrade, toBigDec(getTradeBook(pair).getAskPrice())));
                         fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getQuoteAsset(), multiply(amtForTrade, coefficient));
                         fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getBaseAsset(), pairQuantity);
                         fakeBalance.reduceBalanceBySymbol("BNB", multiply(multiply(amtForTrade, coefficient), commission));
-                        if (isValidQty(pair, pairQuantity)) {
+                        if (isValidQty(pair, pairQuantity) && test) {
                             apiRestClient.newOrderTest(NewOrder.marketBuy(pair, pairQuantity.toString()));
-                            amtAfterTransaction = pairQuantity;
                         }
+                        amtAfterTransaction = pairQuantity;
                     }
                 }
                 break;
@@ -339,10 +288,10 @@ public class DriverBotImpl implements DriverBot {
                 fakeBalance.reduceBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getBaseAsset(), normalizeQuantity(pair, normAfterTr));
                 fakeBalance.addBalanceBySymbol(exchangeInfo.getSymbolInfo(pair).getQuoteAsset(), pairQuantity);
                 fakeBalance.reduceBalanceBySymbol("BNB", divide(multiply(pairQuantity, commission), getPrice("BNBUSDT")));
-                if (isValidQty(pair, normAfterTr)) {
+                if (isValidQty(pair, normAfterTr) && test) {
                     apiRestClient.newOrderTest(NewOrder.marketSell(pair, normalizeQuantity(pair, normAfterTr).toString()));
-                    amtAfterTransaction = pairQuantity;
                 }
+                amtAfterTransaction = pairQuantity;
                 break;
             default:
         }
