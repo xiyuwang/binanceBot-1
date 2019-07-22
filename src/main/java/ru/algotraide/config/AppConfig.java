@@ -1,5 +1,6 @@
 package ru.algotraide.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.algotraide.component.BalanceCache;
@@ -13,8 +14,10 @@ import ru.algotraide.component.impl.MainBotImpl;
 
 @Configuration
 public class AppConfig {
-    private String apiKey = "";
-    private String secretKey = "";
+    @Value("${binanceApiKey}")
+    private String apiKey;
+    @Value("${binanceSecretKey}")
+    private String secretKey;
     private boolean bnbCommission = true;
 
     @Bean

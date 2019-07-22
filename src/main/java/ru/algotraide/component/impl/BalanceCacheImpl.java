@@ -22,7 +22,7 @@ public class BalanceCacheImpl implements BalanceCache {
     /**
      * Key is the symbol, and the value is the balance of that symbol on the account.
      */
-    private Map<String, AssetBalance> accountBalanceCache;
+    public Map<String, AssetBalance> accountBalanceCache;
     private Map<String, AssetBalance> oldAccountBalanceCache;
     private BinanceApiRestClient restClient;
 
